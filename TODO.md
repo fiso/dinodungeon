@@ -10,7 +10,7 @@ TODO
     	1,2,3,4 = use abilities
     	Right click = attack or move to location
 [X] Map panning and centering behavior
-[ ] Fog of war
+[X] Fog of war
 [ ] Character sheet
     [ ] Basic Stats
     [ ] Pick up items
@@ -18,9 +18,9 @@ TODO
 [ ] Enemies
 [ ] Combat
 [ ] Scoring
+[ ] Fuzzy edges on fog of war
+[ ] Instantiate map rendering
+[ ] Improve map generation
 [ ] Background graphics (behind map)
 [ ] Main menu
 [ ] Intro scroller
-
-
-var l = game.levels[0]; var c = l.container; var p = l.getPixelPosition(l.entrancePosition.x, l.entrancePosition.y);

@@ -1,5 +1,6 @@
 function Level (game, container, width, height) {
-	this.game = game;
+	this.gameLogic = game;
+	this.game = game.game;
 	this.width = width;
 	this.height = height;
 	this.outerContainer = container;
@@ -8,6 +9,15 @@ function Level (game, container, width, height) {
 	this.numWalkableTiles = -1;
 	this.generate(this.width, this.height);
 }
+
+var segLengthMin = 1;
+var segLengthMax = 6;
+var forkOdds = 3;
+
+var SQUARE_EMPTY = 0;
+var SQUARE_WALKABLE = 1;
+var SQUARE_ENTRANCE = 2;
+var SQUARE_EXIT = 3;
 
 var TILE_SIZE = 16;
 
@@ -62,14 +72,58 @@ function getRandomElement (array) {
     return array[Object.keys(array)[Math.floor(Math.random() * Object.keys(array).length)]];
 }
 
+function BresenhamLine (x0, y0, x1, y1) {
+	var result = [];
+
+	var steep = Math.abs(y1 - y0) > Math.abs(x1 - x0);
+	if (steep) {
+		x0 = y0 + (y0=x0, 0);
+		x1 = y1 + (y1=x1, 0);
+	}
+
+	if (x0 > x1) {
+		x0 = x1 + (x1=x0, 0);
+		y0 = y1 + (y1=y0, 0);
+	}
+
+	var deltaX = x1 - x0;
+	var deltaY = Math.abs(y1 - y0);
+	var error = 0;
+	var yStep = -1;
+	if (y0 < y1) {
+		yStep = 1;
+	}
+
+	var y = y0;
+	for (var x = x0; x <= x1; x++) {
+		if (steep) {
+			result.push([y, x]);
+		} else {
+			result.push([x, y]);
+		}
+
+		error += deltaY;
+		if (2 * error >= deltaX) {
+			y += yStep;
+			error -= deltaX;
+		}
+	}
+
+	return result;
+};
+
 Level.prototype.hide = function () {
 	if (this.container) {
+		this.container.remove(this.gameLogic.player.sprite);
+		for (var i = 0; i < this.enemies.length; i++) {
+			this.container.remove(this.enemies[i].sprite);
+		}
 		this.container.destroy();
 		this.container = null;
 	}
 };
 
-Level.prototype.show = function () {
+Level.prototype.makeCurrent = function (goingDown) {
 	this.hide();
 
 	var sprite;
@@ -87,6 +141,7 @@ Level.prototype.show = function () {
 			var spriteIndex = getTileIndex(upFree, downFree, leftFree, rightFree);
 
 			sprite = this.game.add.sprite(x * TILE_SIZE, y * TILE_SIZE, 'map_tiles', spriteIndex, this.container);
+			sprite.discovered = false;
 			sprite.smoothed = false;
 		}
 	}
@@ -102,7 +157,58 @@ Level.prototype.show = function () {
 		'map_tiles', getRandomElement(closedDoors), this.container);
 	sprite.smoothed = false;
 
-	this.container.scale.setTo(4, 4);
+	this.container.scale.setTo(3, 3);
+
+	if (goingDown) {
+		this.gameLogic.player.setMapPosition(this.entrancePosition.x, this.entrancePosition.y);
+	} else {
+		this.gameLogic.player.setMapPosition(this.exitPosition.x, this.exitPosition.y);
+	}
+	this.container.add(this.gameLogic.player.sprite);
+	for (var i = 0; i < this.enemies.length; i++) {
+		this.container.add(this.enemies[i].sprite);
+	}
+
+	this.updateFogOfWar();
+};
+
+Level.prototype.updateFogOfWar = function () {
+	for (var i = 0; i < this.container.children.length; i++) {
+		var sprite = this.container.children[i];
+		var mapCoordinate = {
+			x: (sprite.x - (sprite.isEnemy ? TILE_SIZE / 2 : 0)) / TILE_SIZE,
+			y: (sprite.y - (sprite.isEnemy ? TILE_SIZE / 2 : 0)) / TILE_SIZE
+		};
+
+		var dx = mapCoordinate.x - this.gameLogic.player.mapPosition.x;
+		var dy = mapCoordinate.y - this.gameLogic.player.mapPosition.y;
+		var distance = Math.sqrt(dx * dx + dy * dy);
+		var visible = distance < 5;
+		if (visible) {
+			// Do line of sight testing, but only for tiles within visible range
+			visible = this.tileVisible(mapCoordinate, this.gameLogic.player.mapPosition);
+		}
+
+		if (visible) {
+			sprite.discovered = true;
+			sprite.alpha = 1;
+		} else {
+			sprite.alpha = sprite.discovered ? 0.2 : 0;
+		}
+	}
+};
+
+Level.prototype.tileVisible = function (a, b) {
+	var line = BresenhamLine(a.x, a.y, b.x, b.y);
+
+	for (var i = 0; i < line.length; i++) {
+		var point = line[i];
+		if (this.mapdata[this.width * point[1] + point[0]] === SQUARE_EMPTY) {
+			return false;
+		}
+	}
+
+	return true;
 };
 
 Level.prototype.getRandomWalkableTile = function () {
@@ -119,22 +225,11 @@ Level.prototype.getRandomWalkableTile = function () {
 			}
 		}
 	}
-
-	debugger;
 };
 
 Level.prototype.squareWalkable = function (x, y) {
 	return this.mapdata[this.width * y + x] > 0;
 };
-
-var segLengthMin = 1;
-var segLengthMax = 5;
-var forkOdds = 2;
-
-var SQUARE_EMPTY = 0;
-var SQUARE_WALKABLE = 1;
-var SQUARE_ENTRANCE = 2;
-var SQUARE_EXIT = 3;
 
 Level.prototype.consoleDump = function () {
 	for (var row = 0; row < this.height; row++) {
@@ -150,20 +245,30 @@ Level.prototype.generate = function (width, height) {
 	this.width = width;
 	this.height = height;
 	this.mapdata = new Uint8Array(this.width * this.height);
-	this.generatePath(5, 5, 1, 0, Math.segLengthMin + Math.round(Math.random() * (segLengthMax - segLengthMin)));
+	this.generatePath(Math.floor(width / 2), Math.floor(height / 2), 1, 0, Math.segLengthMin + Math.round(Math.random() * (segLengthMax - segLengthMin)));
 
 	this.numWalkableTiles = 0;
-	for (var i = 0; i < this.mapdata.length; i++) {
+	var i;
+	for (i = 0; i < this.mapdata.length; i++) {
 		if (this.mapdata[i]) {
 			this.numWalkableTiles++;
 		}
 	}
 
+	// FIXME : Determine exit location in a better way. Maybe force a certain distance from the entrance etc.
 	this.entrancePosition = this.getRandomWalkableTile();
 	this.exitPosition = this.getRandomWalkableTile();
 	while (this.entrancePosition.x === this.exitPosition.x && this.entrancePosition.y === this.exitPosition.y) {
-		// FIXME : Determine exit location in a better way? Maybe force a certain distance from the entrance etc.
 		this.exitPosition = this.getRandomWalkableTile();
+	}
+
+	var Enemy = require('Enemy');
+	this.enemies = [];
+	for (i = 0; i < 1; i++) {
+		var position = this.getRandomWalkableTile();
+		var enemy = Enemy.create(this.game, this.outerContainer, position);
+		enemy.sprite.isEnemy = true;
+		this.enemies.push(enemy);
 	}
 };
 

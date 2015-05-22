@@ -8,6 +8,18 @@ function Player(game, container) {
 	this.mapPosition = {x: -1, y: -1};
 	this.sprite.scale.x = 0.5;
 	this.sprite.scale.y = 0.5;
+
+	this.name = "Hero";
+	this.str = 10;
+	this.int = 10;
+	this.vit = 10;
+	this.dex = 10;
+	this.equipSlots = [null, null, null, null];
+	this.inventory = [];
+	for (var i = 0; i < 7 * 3; i++) {
+		this.inventory.push(null);
+	}
+
 	return this;
 }
 
@@ -72,7 +84,7 @@ Player.prototype.update = function () {
 
 		if(Math.abs(moveVector.getMagnitudeSq()) > 0) {
 			var dinoDungeon = require('DinoDungeon');
-			var level = dinoDungeon.getCurrentLevel();
+			var level = dinoDungeon.currentLevel;
 			if (level.squareWalkable(this.mapPosition.x + moveVector.x, this.mapPosition.y + moveVector.y)) {
 				this.animateToMapPosition(this.mapPosition.x + moveVector.x, this.mapPosition.y + moveVector.y);
 			}

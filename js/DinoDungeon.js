@@ -1,6 +1,6 @@
 define(
-	['Player', 'Level'],
-	function (Player, Level) {
+	['Player', 'Level', 'Enemy'],
+	function (Player, Level, Enemy) {
 		return {
 			game: null,
 			player: null,
@@ -12,7 +12,7 @@ define(
 			},
 
 			start: function () {
-				this.game = new Phaser.Game(1280, 720, Phaser.CANVAS, 'dinodungeon', {
+				this.game = new Phaser.Game(1280, 720, Phaser.AUTO, 'dinodungeon', {
 					preload: this.preload.bind(this),
 					create: this.create.bind(this),
 					render: this.render.bind(this),
@@ -39,7 +39,7 @@ define(
 			},
 
 			render: function () {
-				this.game.debug.text(this.game.time.fps || '--', 2, 14, "#00ff00");
+				// this.game.debug.text(this.game.time.fps || '--', 2, 14, "#00ff00");
 			},
 
 			update: function () {
@@ -75,28 +75,18 @@ define(
 			},
 
 			addLevel: function () {
-				var level = Level.create(this.game, this.playField, 30, 30);		// TODO: Tweak level sizes, and make larger and larger levels as you venture further down
+				var level = Level.create(this, this.playField, 20, 20);		// TODO: Tweak level sizes, and make larger and larger levels as you venture further down
 				this.levels.push(level);
 			},
 
 			setCurrentLevel: function (index, goingDown) {
-				if (this.currentLevelIndex > -1) {
-					this.levels[this.currentLevelIndex].container.remove(this.player.sprite);
-					this.levels[this.currentLevelIndex].hide();
+				if (this.currentLevel) {
+					this.currentLevel.hide();
 				}
-				this.currentLevelIndex = index;
 				var level = this.levels[index];
-				level.show();
-
-				if (goingDown) {
-					this.player.setMapPosition(level.entrancePosition.x, level.entrancePosition.y);
-				} else {
-					this.player.setMapPosition(level.exitPosition.x, level.exitPosition.y);
-				}
-				level.container.add(this.player.sprite);
-				this.player.sprite.bringToTop();
-
-				this.centerCameraOnMapPosition(level.entrancePosition);
+				this.currentLevel = level;
+				this.currentLevelIndex = index;
+				level.makeCurrent(goingDown);
 			},
 
 			centerCameraOnMapPosition: function (mapPosition) {
@@ -112,14 +102,12 @@ define(
 				game.game.world.camera.y = -(game.game.height / 2 - (mapPosition.y + level.getTileSize() / 2) * level.container.scale.y);
 			},
 
-			getCurrentLevel: function () {
-				return this.levels[this.currentLevelIndex];
-			},
-
 			onPlayerStepComplete: function () {
+				this.currentLevel.updateFogOfWar();
+
 				// Check if we stepped on anything interesting
 
-				var level = this.getCurrentLevel();
+				var level = this.currentLevel;
 				if (this.player.mapPosition.x === level.entrancePosition.x && this.player.mapPosition.y === level.entrancePosition.y) {
 					if (this.currentLevelIndex > 0) {
 						this.setCurrentLevel(this.currentLevelIndex - 1, false);
