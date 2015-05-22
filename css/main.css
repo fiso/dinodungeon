@@ -4,14 +4,21 @@ html {
 body {
 	margin: 0;
 	padding: 0;
-	font-family: arial;
 	font-size: 11px;
 	text-align: center;
-	background-color: #252122;
+	background-color: black;
+	color: white;
+	font-family: "Play";
+	font-size: 20px;
 }
 
 canvas {
-	margin: 100px auto;
+	position: absolute;
+	top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+	margin: auto;
 }
 
 .clear {

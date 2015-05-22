@@ -1,18 +1,20 @@
-function Player(game) {
+function Player(game, container) {
 	this.game = game;
 	this.sprite = game.add.sprite(0, 0, 'hero_sprite');
+	container.add(this.sprite);
 	this.sprite.smoothed = false;
 	this.sprite.anchor.set(0.5, 0.5);
 	this.animation = this.sprite.animations.add('walk', null, 4, true);
-	this.cursors = game.input.keyboard.createCursorKeys();
 	this.mapPosition = {x: -1, y: -1};
+	this.sprite.scale.x = 0.5;
+	this.sprite.scale.y = 0.5;
 	return this;
 }
 
 Player.prototype.getScreenCoordinates = function (mapX, mapY) {
 	return {
-		x: mapX * 16 * 2 + 16,
-		y: mapY * 16 * 2 + 16
+		x: mapX * 16 + 8,
+		y: mapY * 16 + 8
 	};
 };
 
@@ -33,11 +35,11 @@ Player.prototype.animateToMapPosition = function (x, y) {
 
 	if (coords.x < this.sprite.x) {
 		if (this.sprite.scale.x < 0) {
-			this.sprite.scale.x = 1;
+			this.sprite.scale.x = 0.5;
 		}
 	} else if (coords.x > this.sprite.x) {
 		if (this.sprite.scale.x > 0) {
-			this.sprite.scale.x = -1;
+			this.sprite.scale.x = -0.5;
 		}
 	}
 
@@ -55,16 +57,16 @@ Player.prototype.update = function () {
 	if (!this.game.tweens.isTweening(this.sprite)) {
 		var velocity = 1;
 		var moveVector = new Phaser.Point(0, 0);
-		if (this.cursors.up.isDown) {
+		if (this.game.input.keyboard.isDown(Phaser.Keyboard.W)) {
 			moveVector.y -= velocity;
 		}
-		if (this.cursors.down.isDown) {
+		if (this.game.input.keyboard.isDown(Phaser.Keyboard.S)) {
 			moveVector.y += velocity;
 		}
-		if (this.cursors.left.isDown) {
+		if (this.game.input.keyboard.isDown(Phaser.Keyboard.A)) {
 			moveVector.x -= velocity;
 		}
-		if (this.cursors.right.isDown) {
+		if (this.game.input.keyboard.isDown(Phaser.Keyboard.D)) {
 			moveVector.x += velocity;
 		}
 
@@ -80,8 +82,8 @@ Player.prototype.update = function () {
 
 define(function () {
 	return {
-		create: function (game) {
-			return new Player(game);
+		create: function (game, container) {
+			return new Player(game, container);
 		}
 	}
 });

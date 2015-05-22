@@ -1,12 +1,15 @@
-function Level (game, width, height) {
+function Level (game, container, width, height) {
 	this.game = game;
 	this.width = width;
 	this.height = height;
+	this.outerContainer = container;
 	this.entrancePosition = {x: -1, y: -1};
 	this.exitPosition = {x: -1, y: -1};
 	this.numWalkableTiles = -1;
 	this.generate(this.width, this.height);
 }
+
+var TILE_SIZE = 16;
 
 var openTiles = [22, 23, 24, 43, 44, 45, 64, 65, 66];
 var leftBorders = [21, 42, 63];
@@ -70,7 +73,7 @@ Level.prototype.show = function () {
 	this.hide();
 
 	var sprite;
-	this.container = this.game.add.group();
+	this.container = this.game.add.group(this.outerContainer);
 	for (var y = 0; y < this.height; y++) {
 		for (var x = 0; x < this.width; x++) {
 			if (!this.mapdata[this.width * y + x]) {
@@ -83,23 +86,23 @@ Level.prototype.show = function () {
 			var rightFree = x < (this.width - 1) ? (this.mapdata[this.width * y + (x + 1)] ? true : false) : false;
 			var spriteIndex = getTileIndex(upFree, downFree, leftFree, rightFree);
 
-			sprite = this.game.add.sprite(x * 16, y * 16, 'map_tiles', spriteIndex, this.container);
+			sprite = this.game.add.sprite(x * TILE_SIZE, y * TILE_SIZE, 'map_tiles', spriteIndex, this.container);
 			sprite.smoothed = false;
 		}
 	}
 
 	sprite = this.game.add.sprite(
-		this.entrancePosition.x * 16,
-		this.entrancePosition.y * 16,
+		this.entrancePosition.x * TILE_SIZE,
+		this.entrancePosition.y * TILE_SIZE,
 		'map_tiles', getRandomElement(openDoors), this.container);
 	sprite.smoothed = false;
 	sprite = this.game.add.sprite(
-		this.exitPosition.x * 16,
-		this.exitPosition.y * 16,
+		this.exitPosition.x * TILE_SIZE,
+		this.exitPosition.y * TILE_SIZE,
 		'map_tiles', getRandomElement(closedDoors), this.container);
 	sprite.smoothed = false;
 
-	this.container.scale.setTo(2, 2);
+	this.container.scale.setTo(4, 4);
 };
 
 Level.prototype.getRandomWalkableTile = function () {
@@ -159,9 +162,20 @@ Level.prototype.generate = function (width, height) {
 	this.entrancePosition = this.getRandomWalkableTile();
 	this.exitPosition = this.getRandomWalkableTile();
 	while (this.entrancePosition.x === this.exitPosition.x && this.entrancePosition.y === this.exitPosition.y) {
-		// FIXME
+		// FIXME : Determine exit location in a better way? Maybe force a certain distance from the entrance etc.
 		this.exitPosition = this.getRandomWalkableTile();
 	}
+};
+
+Level.prototype.getPixelPosition = function (mapX, mapY) {
+	return {
+		x: mapX * TILE_SIZE,
+		y: mapY * TILE_SIZE
+	};
+};
+
+Level.prototype.getTileSize = function () {
+	return TILE_SIZE;
 };
 
 Level.prototype.generatePath = function (startX, startY, dirX, dirY, iLength) {
@@ -234,8 +248,8 @@ Level.prototype.generatePath = function (startX, startY, dirX, dirY, iLength) {
 
 define(function () {
 	return {
-		create: function (game, width, height) {
-			return new Level(game, width, height);
+		create: function (game, container, width, height) {
+			return new Level(game, container, width, height);
 		}
 	}
 });
