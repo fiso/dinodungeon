@@ -1,7 +1,6 @@
 function UI (game, container) {
 	this.gameLogic = game;
 	this.game = game.game;
-	//this.outerContainer = container;
 
 	this.margin = 8;
 
