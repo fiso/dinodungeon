@@ -1,0 +1,19 @@
+html {
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	font-family: arial;
+	font-size: 11px;
+	text-align: center;
+	background-color: #252122;
+}
+
+canvas {
+	margin: 100px auto;
+}
+
+.clear {
+	clear: both;
+}
