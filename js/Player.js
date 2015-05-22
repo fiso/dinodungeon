@@ -5,7 +5,7 @@ function Player(game, container) {
 	container.add(this.sprite);
 	this.sprite.smoothed = false;
 	this.sprite.anchor.set(0.5, 0.5);
-	this.animation = this.sprite.animations.add('walk', null, 4, true);
+	this.animation = this.sprite.animations.add('walk', null, 8, true);
 	this.mapPosition = {x: -1, y: -1};
 	this.sprite.scale.x = 0.5;
 	this.sprite.scale.y = 0.5;
@@ -89,7 +89,7 @@ Player.prototype.takeAction = function (action, actionData) {
 
 Player.prototype.animateToMapPosition = function (x, y) {
 	var coords = this.getScreenCoordinates(x, y);
-	var tween = this.game.add.tween(this.sprite).to({x: coords.x, y: coords.y}, 500, Phaser.Easing.Linear.None, true);
+	var tween = this.game.add.tween(this.sprite).to({x: coords.x, y: coords.y}, 250, Phaser.Easing.Linear.None, true);
 
 	this.mapPosition.x = x;
 	this.mapPosition.y = y;
@@ -113,7 +113,31 @@ Player.prototype.animateToMapPosition = function (x, y) {
 };
 
 Player.prototype.update = function () {
-	if (!this.game.tweens.isTweening(this.sprite)) {
+	if (this.game.tweens.isTweening(this.sprite)) {
+		return;
+	}
+
+	if (this.moveDestination) {
+		var path = this.gameLogic.currentLevel.getPath(this.mapPosition, this.moveDestination);
+		if (path.length < 2) {
+			console.log("Destination reached");
+			this.moveDestination = null;
+		} else {
+			if (!this.gameLogic.currentLevel.arePointsAdjacent(this.mapPosition, {x: path[1][0], y: path[1][1] })) {
+				debugger;
+			}
+			if (this.gameLogic.currentLevel.squareWalkable(path[1][0], path[1][1])) {
+				this.takeAction(this.actions.MOVE_TO_POSITION, {
+					x: path[1][0],
+					y: path[1][1]
+				});
+			} else {
+				console.log("Something is in the way. Aborting pathing.");
+				this.moveDestination = null;
+			}
+		}
+	} else {
+
 		var velocity = 1;
 		var moveVector = new Phaser.Point(0, 0);
 		if (this.game.input.keyboard.isDown(Phaser.Keyboard.W)) {
@@ -139,6 +163,10 @@ Player.prototype.update = function () {
 			}
 		}
 	}
+};
+
+Player.prototype.setMoveDestination = function (destination) {
+	this.moveDestination = destination;
 };
 
 Player.prototype.getArmor = function () {

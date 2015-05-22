@@ -39,6 +39,12 @@ define(
 				this.game.scale.setShowAll();
 				this.game.scale.refresh();
 				this.game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
+			    this.game.input.onDown.add(function (self, pointer) {
+			    	if (pointer.button === Phaser.Mouse.RIGHT_BUTTON) {
+				    	this.capturedRightclick = true;
+				    	this.capturedPointer = pointer;
+			    	}
+			    }, this);
 			},
 
 			render: function () {
@@ -46,6 +52,15 @@ define(
 			},
 
 			update: function () {
+				if (this.capturedRightclick) {
+			    	this.capturedRightclick = false;
+			    	var mapPosition = this.currentLevel.getMapPosition(this.capturedPointer);
+			    	if (this.currentLevel.squareWalkable(mapPosition.x, mapPosition.y) &&
+			    		this.currentLevel.squareDiscovered(mapPosition.x, mapPosition.y)) {
+				    	this.player.setMoveDestination(mapPosition);
+			    	}
+				}
+
 				this.player.update();
 				this.centerCameraOnMapPixelPosition({
 					x: this.player.sprite.position.x + this.cameraOffset.x,

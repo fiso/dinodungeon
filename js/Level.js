@@ -8,6 +8,7 @@ function Level (game, container, width, height) {
 	this.exitPosition = {x: -1, y: -1};
 	this.numWalkableTiles = -1;
 	this.generate(this.width, this.height);
+	this.discoveryLookup = {};
 }
 
 var segLengthMin = 1;
@@ -20,6 +21,7 @@ var SQUARE_ENTRANCE = 2;
 var SQUARE_EXIT = 3;
 
 var TILE_SIZE = 16;
+var SCALE_FACTOR = 3;
 
 var openTiles = [22, 23, 24, 43, 44, 45, 64, 65, 66];
 var leftBorders = [21, 42, 63];
@@ -128,6 +130,7 @@ Level.prototype.makeCurrent = function (goingDown) {
 
 	var sprite;
 	this.container = this.game.add.group(this.outerContainer);
+
 	for (var y = 0; y < this.height; y++) {
 		for (var x = 0; x < this.width; x++) {
 			if (!this.mapdata[this.width * y + x]) {
@@ -157,7 +160,7 @@ Level.prototype.makeCurrent = function (goingDown) {
 		'map_tiles', getRandomElement(closedDoors), this.container);
 	sprite.smoothed = false;
 
-	this.container.scale.setTo(3, 3);
+	this.container.scale.setTo(SCALE_FACTOR, SCALE_FACTOR);
 
 	if (goingDown) {
 		this.gameLogic.player.setMapPosition(this.entrancePosition.x, this.entrancePosition.y);
@@ -191,6 +194,7 @@ Level.prototype.updateFogOfWar = function () {
 
 		if (visible) {
 			sprite.discovered = true;
+			this.discoveryLookup[mapCoordinate.x.toString() + "." + mapCoordinate.y.toString()] = true;
 			sprite.alpha = 1;
 		} else {
 			sprite.alpha = sprite.enemy ? 0 : (sprite.discovered ? 0.2 : 0);
@@ -290,6 +294,11 @@ Level.prototype.squareWalkable = function (x, y) {
 	return this.mapdata[this.width * y + x] > 0;
 };
 
+Level.prototype.squareDiscovered = function (x, y) {
+	var key = x.toString() + "." + y.toString();
+	return !!this.discoveryLookup[key];
+};
+
 Level.prototype.consoleDump = function () {
 	for (var row = 0; row < this.height; row++) {
 		var output = "" + row + (row < 10 ? " " : "") + "> ";
@@ -335,6 +344,14 @@ Level.prototype.getPixelPosition = function (mapX, mapY) {
 	return {
 		x: mapX * TILE_SIZE,
 		y: mapY * TILE_SIZE
+	};
+};
+
+Level.prototype.getMapPosition = function(screenPosition) {
+	// TODO: This is wrong, stupid, bad and ugly
+	return {
+		x: Math.floor((screenPosition.x + (TILE_SIZE * SCALE_FACTOR) - this.container.getBounds().x) / SCALE_FACTOR / TILE_SIZE) - 1,
+		y: Math.floor((screenPosition.y - (TILE_SIZE / 2 * SCALE_FACTOR) - this.container.getBounds().y) / SCALE_FACTOR / TILE_SIZE)
 	};
 };
 

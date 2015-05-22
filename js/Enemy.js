@@ -5,7 +5,7 @@ function Enemy(game, container, position) {
 	container.add(this.sprite);
 	this.sprite.smoothed = false;
 	this.sprite.anchor.set(0.5, 0.5);
-	this.animation = this.sprite.animations.add('walk', null, 4, true);
+	this.animation = this.sprite.animations.add('walk', null, 8, true);
 	this.mapPosition = {x: -1, y: -1};
 	this.sprite.scale.x = 0.5;
 	this.sprite.scale.y = 0.5;
@@ -27,7 +27,12 @@ function Enemy(game, container, position) {
 
 	this.sprite.events.onInputDown.add(function (self, pointer) {
 		if (pointer.button === Phaser.Mouse.RIGHT_BUTTON) {
-			this.gameLogic.player.takeAction(this.gameLogic.player.actions.ATTACK, {enemy: this});
+			this.gameLogic.capturedRightclick = false;
+			if (this.gameLogic.currentLevel.arePointsAdjacent(this.gameLogic.player.mapPosition, this.mapPosition)) {
+				this.gameLogic.player.takeAction(this.gameLogic.player.actions.ATTACK, {enemy: this});
+			} else {
+				console.log("Out of range!");
+			}
 		}
 	}.bind(this));
 
@@ -51,7 +56,7 @@ Enemy.prototype.setMapPosition = function (x, y) {
 
 Enemy.prototype.animateToMapPosition = function (x, y) {
 	var coords = this.getScreenCoordinates(x, y);
-	var tween = this.game.add.tween(this.sprite).to({x: coords.x, y: coords.y}, 500, Phaser.Easing.Linear.None, true);
+	var tween = this.game.add.tween(this.sprite).to({x: coords.x, y: coords.y}, 250, Phaser.Easing.Linear.None, true);
 
 	this.mapPosition.x = x;
 	this.mapPosition.y = y;
@@ -135,8 +140,6 @@ Enemy.prototype.newTurn = function () {
 		if (!this.gameLogic.currentLevel.arePointsAdjacent(this.mapPosition, {x: path[1][0], y: path[1][1] })) {
 			debugger;
 		}
-		console.log(this.mapPosition);
-		console.log(path[1][0], path[1][1]);
 		if (this.gameLogic.currentLevel.squareWalkable(path[1][0], path[1][1])) {
 			this.animateToMapPosition(path[1][0], path[1][1]);
 		} else {
