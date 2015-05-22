@@ -1,6 +1,6 @@
 define(
-	['Player', 'Level', 'Enemy'],
-	function (Player, Level, Enemy) {
+	['Player', 'Level', 'Enemy', 'UI'],
+	function (Player, Level, Enemy, UI) {
 		return {
 			game: null,
 			player: null,
@@ -10,9 +10,10 @@ define(
 				x: 0,
 				y: 0
 			},
+			turnNumber: 0,
 
 			start: function () {
-				this.game = new Phaser.Game(1280, 720, Phaser.AUTO, 'dinodungeon', {
+				this.game = new Phaser.Game(1920, 1080, Phaser.AUTO, 'dinodungeon', {
 					preload: this.preload.bind(this),
 					create: this.create.bind(this),
 					render: this.render.bind(this),
@@ -30,12 +31,14 @@ define(
 				this.game.time.advancedTiming = true;
 				this.game.world.setBounds(-10000, -10000, 20000, 20000);
 				this.playField = this.game.add.group(this.game.world, "playField");
-				this.player = Player.create(this.game, this.playField);
+				this.player = Player.create(this, this.playField);
+				this.UI = UI.create(this);
 				this.addLevel();
 				this.setCurrentLevel(0, true);
 				this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
 				this.game.scale.setShowAll();
 				this.game.scale.refresh();
+				this.game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
 			},
 
 			render: function () {
@@ -74,6 +77,13 @@ define(
 				this.cameraOffset.y += moveVector.y;
 			},
 
+			newTurn: function () {
+				this.turnNumber++;
+				console.log("== Turn " + this.turnNumber + " starting ==");
+
+				this.currentLevel.newTurn();
+			},
+
 			addLevel: function () {
 				var level = Level.create(this, this.playField, 20, 20);		// TODO: Tweak level sizes, and make larger and larger levels as you venture further down
 				this.levels.push(level);
@@ -87,6 +97,7 @@ define(
 				this.currentLevel = level;
 				this.currentLevelIndex = index;
 				level.makeCurrent(goingDown);
+				this.UI.setDepth(index + 1);
 			},
 
 			centerCameraOnMapPosition: function (mapPosition) {
@@ -115,6 +126,8 @@ define(
 				}
 				if (this.player.mapPosition.x === level.exitPosition.x && this.player.mapPosition.y === level.exitPosition.y) {
 					if (this.currentLevelIndex === this.levels.length - 1) {
+						// New level reached, award score!
+						this.UI.addScore(1000);
 						this.addLevel();
 					}
 					this.setCurrentLevel(this.currentLevelIndex + 1, true);

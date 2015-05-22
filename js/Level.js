@@ -193,9 +193,57 @@ Level.prototype.updateFogOfWar = function () {
 			sprite.discovered = true;
 			sprite.alpha = 1;
 		} else {
-			sprite.alpha = sprite.discovered ? 0.2 : 0;
+			sprite.alpha = sprite.enemy ? 0 : (sprite.discovered ? 0.2 : 0);
 		}
 	}
+};
+
+Level.prototype.newTurn = function () {
+	for (var i = 0; i < this.enemies.length; i++) {
+		this.enemies[i].newTurn();
+	}
+};
+
+Level.prototype.killEnemy = function (deadEnemy) {
+	var myIndex = -1;
+	for (var i = 0; i < this.enemies.length; i++) {
+		var enemy = this.enemies[i];
+		if (enemy === deadEnemy) {
+			myIndex = i;
+			break;
+		}
+	}
+
+	if (myIndex === -1) {
+		debugger;
+	}
+
+	enemy.sprite.destroy();
+	this.enemies.splice(myIndex, 1);
+};
+
+Level.prototype.getPath = function (a, b) {
+	var line = BresenhamLine(a.x, a.y, b.x, b.y);
+	if (line[0][0] !== a.x || line[0][1] !== a.y) {
+		line.reverse();
+	}
+	return line;
+};
+
+Level.prototype.arePointsAdjacent = function (a, b) {
+	var dx = Math.abs(a.x - b.x);
+	var dy = Math.abs(a.y - b.y);
+	var manhattanDistance = dx + dy;
+
+	if (manhattanDistance === 1) {
+		return true;
+	}
+
+	if (dx === 1 && dy === 1) {
+		return true;
+	}
+
+	return false;
 };
 
 Level.prototype.tileVisible = function (a, b) {
@@ -228,6 +276,17 @@ Level.prototype.getRandomWalkableTile = function () {
 };
 
 Level.prototype.squareWalkable = function (x, y) {
+	if (this.gameLogic.player.mapPosition.x === x && this.gameLogic.player.mapPosition.y === y) {
+		return false;
+	}
+
+	for (var i = 0; i < this.enemies.length; i++) {
+		var enemy = this.enemies[i];
+		if (enemy.mapPosition.x === x && enemy.mapPosition.y === y) {
+			return false;
+		}
+	}
+
 	return this.mapdata[this.width * y + x] > 0;
 };
 
@@ -264,9 +323,9 @@ Level.prototype.generate = function (width, height) {
 
 	var Enemy = require('Enemy');
 	this.enemies = [];
-	for (i = 0; i < 1; i++) {
+	for (i = 0; i < 5; i++) {
 		var position = this.getRandomWalkableTile();
-		var enemy = Enemy.create(this.game, this.outerContainer, position);
+		var enemy = Enemy.create(this.gameLogic, this.outerContainer, position);
 		enemy.sprite.isEnemy = true;
 		this.enemies.push(enemy);
 	}

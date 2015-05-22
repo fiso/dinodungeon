@@ -1,6 +1,7 @@
 function Enemy(game, container, position) {
-	this.game = game;
-	this.sprite = game.add.sprite(0, 0, 'hero_sprite');
+	this.gameLogic = game;
+	this.game = game.game;
+	this.sprite = this.game.add.sprite(0, 0, 'hero_sprite');
 	container.add(this.sprite);
 	this.sprite.smoothed = false;
 	this.sprite.anchor.set(0.5, 0.5);
@@ -8,6 +9,7 @@ function Enemy(game, container, position) {
 	this.mapPosition = {x: -1, y: -1};
 	this.sprite.scale.x = 0.5;
 	this.sprite.scale.y = 0.5;
+	this.sprite.enemy = this;
 
 	this.name = "Enemy";
 	this.str = 10;
@@ -15,7 +17,19 @@ function Enemy(game, container, position) {
 	this.vit = 10;
 	this.dex = 10;
 
+	this.health = 10;
+
+	this.lastPlayerPosition = null;
 	this.setMapPosition(position.x, position.y);
+
+	this.sprite.inputEnabled = true;
+	this.sprite.input.useHandCursor = true;
+
+	this.sprite.events.onInputDown.add(function (self, pointer) {
+		if (pointer.button === Phaser.Mouse.RIGHT_BUTTON) {
+			this.gameLogic.player.takeAction(this.gameLogic.player.actions.ATTACK, {enemy: this});
+		}
+	}.bind(this));
 
 	return this;
 }
@@ -61,6 +75,74 @@ Enemy.prototype.animateToMapPosition = function (x, y) {
 
 Enemy.prototype.update = function () {
 
+};
+
+Enemy.prototype.attackPlayer = function () {
+	var player = this.gameLogic.player;
+	var chanceToHit = Math.min(Math.max((this.dex * 2) / player.dex, 0.01), 0.99);
+	var damageDealt = Math.floor((Math.floor(Math.random() * 3) + 1) + this.str * 0.1);
+	if (Math.random() > chanceToHit) {
+		console.log("Attack missed");
+		return;
+	}
+	this.gameLogic.player.takeDamage(damageDealt);
+};
+
+Enemy.prototype.takeDamage = function (amount) {
+	console.log("Enemy taking " + amount + " damage");
+	this.health -= amount;
+	if (this.health < 1) {
+		console.log("Enemy killed!");
+		this.gameLogic.UI.addScore(100);
+		this.gameLogic.currentLevel.killEnemy(this);
+	}
+};
+
+Enemy.prototype.newTurn = function () {
+	var playerVisible = this.gameLogic.currentLevel.tileVisible(this.gameLogic.player.mapPosition, this.mapPosition);
+	var isNextToPlayer = this.gameLogic.currentLevel.arePointsAdjacent(this.gameLogic.player.mapPosition, this.mapPosition);
+	var moveToPos = null;
+
+	if (playerVisible) {
+		this.lastPlayerPosition = {
+			x: this.gameLogic.player.mapPosition.x,
+			y: this.gameLogic.player.mapPosition.y
+		};
+
+		if (isNextToPlayer) {
+			this.attackPlayer();
+		} else {
+			console.log("Moving toward player");
+			moveToPos = this.gameLogic.player.mapPosition;
+		}
+	} else if (this.lastPlayerPosition) {
+		if (this.mapPosition.x === this.lastPlayerPosition.x &&
+			this.mapPosition.y === this.lastPlayerPosition.y) {
+			console.log("Reached last known position. Stopping here.");
+			this.lastPlayerPosition = null;
+		} else  {
+			console.log("Moving toward last known position");
+			moveToPos = this.lastPlayerPosition;
+		}
+	}
+
+	if (moveToPos) {
+		var path = this.gameLogic.currentLevel.getPath(this.mapPosition, moveToPos);
+		if (path.length < 2) {
+			console.log("I am on the player tile? This should not happen");
+			return;
+		}
+		if (!this.gameLogic.currentLevel.arePointsAdjacent(this.mapPosition, {x: path[1][0], y: path[1][1] })) {
+			debugger;
+		}
+		console.log(this.mapPosition);
+		console.log(path[1][0], path[1][1]);
+		if (this.gameLogic.currentLevel.squareWalkable(path[1][0], path[1][1])) {
+			this.animateToMapPosition(path[1][0], path[1][1]);
+		} else {
+			console.log("Something is in the way. Not moving.");
+		}
+	}
 };
 
 define(function () {

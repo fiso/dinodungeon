@@ -1,6 +1,7 @@
 function Player(game, container) {
-	this.game = game;
-	this.sprite = game.add.sprite(0, 0, 'hero_sprite');
+	this.gameLogic = game;
+	this.game = game.game;
+	this.sprite = this.game.add.sprite(0, 0, 'hero_sprite');
 	container.add(this.sprite);
 	this.sprite.smoothed = false;
 	this.sprite.anchor.set(0.5, 0.5);
@@ -14,11 +15,27 @@ function Player(game, container) {
 	this.int = 10;
 	this.vit = 10;
 	this.dex = 10;
+	this.health = 10;
+	this.maxHealth = 10;
+	this.mana = 10;
+	this.maxMana = 10;
+	this.level = 1;
 	this.equipSlots = [null, null, null, null];
 	this.inventory = [];
 	for (var i = 0; i < 7 * 3; i++) {
 		this.inventory.push(null);
 	}
+
+	this.actions = {
+		MOVE_TO_POSITION: "MOVE_TO_POSITION",
+		WAIT: "WAIT",
+		SLEEP: "SLEEP",
+		CAST_SPELL: "CAST_SPELL",
+		ATTACK: "ATTACK",
+		SEARCH: "SEARCH"
+	};
+
+	this.game.input.keyboard.onDownCallback = this.onKeypress.bind(this);
 
 	return this;
 }
@@ -36,6 +53,38 @@ Player.prototype.setMapPosition = function (x, y) {
 	this.sprite.y = coords.y;
 	this.mapPosition.x = x;
 	this.mapPosition.y = y;
+};
+
+Player.prototype.onKeypress = function (event) {
+	if (event.repeat || this.game.tweens.isTweening(this.sprite)) {
+		return;
+	}
+
+	switch (event.keyCode) {
+		case Phaser.Keyboard.Z:
+			this.takeAction(this.actions.WAIT);
+			break;
+		default:
+			break;
+	}
+};
+
+Player.prototype.takeAction = function (action, actionData) {
+	console.log("Player action taken: " + action);
+	switch (action) {
+		case this.actions.MOVE_TO_POSITION:
+			this.animateToMapPosition(actionData.x, actionData.y);
+			break;
+		case this.actions.WAIT:
+			break;
+		case this.actions.ATTACK:
+			this.attackEnemy(actionData.enemy);
+			break;
+		default:
+			console.log("UNHANDLED player action: " + action);
+	}
+
+	this.gameLogic.newTurn();
 };
 
 Player.prototype.animateToMapPosition = function (x, y) {
@@ -59,13 +108,11 @@ Player.prototype.animateToMapPosition = function (x, y) {
 
 	tween.onComplete.add(function () {
 		this.animation.stop(1);
-		var dinoDungeon = require('DinoDungeon');
-		dinoDungeon.onPlayerStepComplete();
+		this.gameLogic.onPlayerStepComplete();
 	}, this);
 };
 
 Player.prototype.update = function () {
-
 	if (!this.game.tweens.isTweening(this.sprite)) {
 		var velocity = 1;
 		var moveVector = new Phaser.Point(0, 0);
@@ -83,13 +130,40 @@ Player.prototype.update = function () {
 		}
 
 		if(Math.abs(moveVector.getMagnitudeSq()) > 0) {
-			var dinoDungeon = require('DinoDungeon');
-			var level = dinoDungeon.currentLevel;
+			var level = this.gameLogic.currentLevel;
 			if (level.squareWalkable(this.mapPosition.x + moveVector.x, this.mapPosition.y + moveVector.y)) {
-				this.animateToMapPosition(this.mapPosition.x + moveVector.x, this.mapPosition.y + moveVector.y);
+				this.takeAction(this.actions.MOVE_TO_POSITION, {
+					x: this.mapPosition.x + moveVector.x,
+					y: this.mapPosition.y + moveVector.y
+				});
 			}
 		}
 	}
+};
+
+Player.prototype.getArmor = function () {
+	// This is a product of equipment worn
+	return 0;
+};
+
+Player.prototype.takeDamage = function (amount) {
+	amount = Math.max(1, amount - this.getArmor());
+	console.log("Player taking " + amount + " damage");
+	this.health -= amount;
+	this.gameLogic.UI.setHP(this.health);
+	if (this.health < 1) {
+		console.log("GAME OVER! TODO: Show UI for game over");
+	}
+};
+
+Player.prototype.attackEnemy = function (enemy) {
+	var chanceToHit = Math.min(Math.max((this.dex * 2) / enemy.dex, 0.01), 0.99);
+	var damageDealt = Math.floor((Math.floor(Math.random() * 3) + 1) + this.str * 0.1);
+	if (Math.random() > chanceToHit) {
+		console.log("Attack missed");
+		return;
+	}
+	enemy.takeDamage(damageDealt);
 };
 
 define(function () {
