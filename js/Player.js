@@ -176,7 +176,7 @@ Player.prototype.getArmor = function () {
 
 Player.prototype.takeDamage = function (amount) {
 	amount = Math.max(1, amount - this.getArmor());
-	console.log("Player taking " + amount + " damage");
+	this.gameLogic.currentLevel.showDamage(this.sprite, amount);
 	this.health -= amount;
 	this.gameLogic.UI.setHP(this.health);
 	if (this.health < 1) {

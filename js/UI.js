@@ -7,7 +7,7 @@ function UI (game, container) {
 	this.container = this.game.add.group();
 	this.container.fixedToCamera = true;
 
-	this.scoreText = this.game.add.text(0, 0, "0", {font: "40px Play", fill: "#FFFFFF", align: "right"});
+	this.scoreText = this.game.add.text(0, 0, "0 points", {font: "40px Play", fill: "#FFFFFF", align: "right"});
 	this.scoreText.anchor.x = 1;
 	this.scoreText.x = this.game.width - this.margin;
 	this.scoreText.y = this.margin;
@@ -50,7 +50,7 @@ UI.prototype.update = function () {
 
 UI.prototype.addScore = function (amount) {
 	this.score += amount;
-	this.scoreText.setText(this.score);
+	this.scoreText.setText(this.score.toString() + " points");
 };
 
 UI.prototype.setHP = function (hp) {

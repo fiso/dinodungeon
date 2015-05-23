@@ -94,8 +94,8 @@ Enemy.prototype.attackPlayer = function () {
 };
 
 Enemy.prototype.takeDamage = function (amount) {
-	console.log("Enemy taking " + amount + " damage");
 	this.health -= amount;
+	this.gameLogic.currentLevel.showDamage(this.sprite, amount);
 	if (this.health < 1) {
 		console.log("Enemy killed!");
 		this.gameLogic.UI.addScore(100);

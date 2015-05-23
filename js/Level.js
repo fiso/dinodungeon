@@ -226,6 +226,54 @@ Level.prototype.killEnemy = function (deadEnemy) {
 	this.enemies.splice(myIndex, 1);
 };
 
+Level.prototype.showDamage = function (sprite, amount) {
+    var textPos = {
+        x: sprite.position.x,
+        y: sprite.position.y - 20
+    };
+
+    this.showFloatingText("-" + amount.toString(), textPos, "#ff0000");
+};
+
+Level.prototype.showHealing = function (sprite, amount) {
+    var textPos = {
+        x: sprite.position.x,
+        y: sprite.position.y - 20
+    };
+
+    this.showFloatingText("+" + amount.toString(), textPos, "#00ff00");
+};
+
+Level.prototype.showFloatingText = function (string, position, color) {
+    var style = {
+        font: "40px Play",
+        fill: color,
+        stroke: "#ffffff",
+        strokeThickness: 1,
+        align: "center"
+    };
+
+    var text = this.game.add.text(position.x, position.y, string, style);
+    text.anchor.x = 0.5;
+    text.anchor.y = 0.5;
+    text.scale.x = 1 / SCALE_FACTOR;
+    text.scale.y = 1 / SCALE_FACTOR;
+    this.container.add(text);
+
+    var speed = 500;
+    var delay = 300;
+
+    var tween = this.game.add.tween(text).to({
+        alpha: 0,
+        y: position.y - 40
+    }, speed, Phaser.Easing.Quadratic.InOut, true, delay);
+
+    tween.onComplete.add(function () {
+        this.destroy();
+    }, text);
+},
+
+
 Level.prototype.getPath = function (a, b) {
 	var line = BresenhamLine(a.x, a.y, b.x, b.y);
 	if (line[0][0] !== a.x || line[0][1] !== a.y) {
