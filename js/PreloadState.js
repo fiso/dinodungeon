@@ -15,7 +15,7 @@ PreloadState.prototype = {
 		this.game.load.image("xp-bar-bg", "img/xp-bar-bg.png");
 		this.game.load.image("character-screen", "img/character-screen.png");
 
-		this.game.load.audio("bgmusic", "audio/Ambient-voyager-chillout-music.mp3");
+		this.game.load.audio("bgmusic", "audio/markus kristo - hades.mp3");
 		this.game.load.audio("dinoroar", "audio/Tyrannosaurus Rex-SoundBible.com-2136096676.mp3");
 	},
 
