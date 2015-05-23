@@ -323,10 +323,16 @@ Level.prototype.getRandomWalkableTile = function () {
 		if (this.mapdata[i]) {
 			count++;
 			if (count > chosen) {
-				return {
-					x: i % this.width,
-					y: Math.floor(i / this.width)
-				};
+				var x = i % this.width;
+				var y = Math.floor(i / this.width);
+				if (this.squareWalkable(x, y)) {
+					return {
+						x: x,
+						y: y
+					};
+				} else {
+					return this.getRandomWalkableTile();	// lol
+				}
 			}
 		}
 	}
@@ -341,10 +347,12 @@ Level.prototype.squareWalkable = function (x, y) {
 		return false;
 	}
 
-	for (var i = 0; i < this.enemies.length; i++) {
-		var enemy = this.enemies[i];
-		if (enemy.mapPosition.x === x && enemy.mapPosition.y === y) {
-			return false;
+	if (this.enemies) {
+		for (var i = 0; i < this.enemies.length; i++) {
+			var enemy = this.enemies[i];
+			if (enemy.mapPosition.x === x && enemy.mapPosition.y === y) {
+				return false;
+			}
 		}
 	}
 
