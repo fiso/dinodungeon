@@ -4,14 +4,6 @@ define(
 	function (Player, Level, Enemy, UI, PreloadState, MenuState, PlayState) {
 		return {
 			game: null,
-			player: null,
-			levels: [],
-			currentLevelIndex: -1,
-			cameraOffset: {
-				x: 0,
-				y: 0
-			},
-			turnNumber: 0,
 
 			start: function () {
 				this.game = new Phaser.Game(1920, 1080, Phaser.AUTO, 'dinodungeon');

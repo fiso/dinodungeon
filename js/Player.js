@@ -176,14 +176,14 @@ Player.prototype.takeDamage = function (amount) {
 	amount = Math.max(1, amount - this.getArmor());
 	this.gameLogic.currentLevel.showDamage(this.sprite, amount);
 	this.health -= amount;
-	this.gameLogic.UI.setHP(this.health);
+	this.gameLogic.UI.setHP(this.health, this.maxHealth);
 	if (this.health < 1) {
 		console.log("GAME OVER! TODO: Show UI for game over");
 	}
 };
 
 Player.prototype.attackEnemy = function (enemy) {
-	var chanceToHit = Math.min(Math.max((this.dex * 2) / enemy.dex, 0.01), 0.99);
+	var chanceToHit = Math.min(Math.max(this.dex / (enemy.dex * 2), 0.01), 0.99);
 	var damageDealt = Math.floor((Math.floor(Math.random() * 3) + 1) + this.str * 0.1);
 	if (Math.random() > chanceToHit) {
 		console.log("Attack missed");

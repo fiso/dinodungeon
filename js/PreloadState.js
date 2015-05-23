@@ -6,7 +6,14 @@ function PreloadState(game) {
 PreloadState.prototype = {
 	preload: function () {
 		this.game.load.spritesheet('hero_sprite', 'img/hero.png', 64, 64);
+		this.game.load.spritesheet('enemy_sprite', 'img/enemy.png', 64, 64);
 		this.game.load.spritesheet('map_tiles', 'img/dungeon_tiles_compact_and_varied.png', 16, 16);
+		this.game.load.image("avatar", "img/avatar.png");
+		this.game.load.image("avatar-frame", "img/avatar-frame.png");
+		this.game.load.image("health-box", "img/health-box.png");
+		this.game.load.image("mana-box", "img/mana-box.png");
+		this.game.load.image("xp-bar", "img/xp-bar.png");
+		this.game.load.image("xp-bar-bg", "img/xp-bar-bg.png");
 	},
 
 	create: function () {

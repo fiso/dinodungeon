@@ -1,7 +1,7 @@
 function Enemy(game, container, position) {
 	this.gameLogic = game;
 	this.game = game.game;
-	this.sprite = this.game.add.sprite(0, 0, 'hero_sprite');
+	this.sprite = this.game.add.sprite(0, 0, 'enemy_sprite');
 	container.add(this.sprite);
 	this.sprite.smoothed = false;
 	this.sprite.anchor.set(0.5, 0.5);
@@ -17,7 +17,7 @@ function Enemy(game, container, position) {
 	this.vit = 10;
 	this.dex = 10;
 
-	this.health = 10;
+	this.health = 5;
 
 	this.lastPlayerPosition = null;
 	this.setMapPosition(position.x, position.y);
@@ -84,8 +84,9 @@ Enemy.prototype.update = function () {
 
 Enemy.prototype.attackPlayer = function () {
 	var player = this.gameLogic.player;
-	var chanceToHit = Math.min(Math.max((this.dex * 2) / player.dex, 0.01), 0.99);
-	var damageDealt = Math.floor((Math.floor(Math.random() * 3) + 1) + this.str * 0.1);
+	var chanceToHit = Math.min(Math.max(this.dex / (player.dex * 2), 0.01), 0.99);
+	var damageDealt = Math.floor((Math.floor(Math.random() * 2)) + this.str * 0.1);
+	console.log(chanceToHit);
 	if (Math.random() > chanceToHit) {
 		console.log("Attack missed");
 		return;

@@ -5,7 +5,7 @@ function MenuState(game) {
 
 MenuState.prototype = {
 	create: function () {
-		this.startGame("Jace Beleren");	// Dev override
+		this.startGame("fiso");	// Dev override
 
 		this.logo = this.game.add.text(0, 0, "DINO DUNGEON", {
 	        font: "200px Play",
@@ -53,8 +53,9 @@ MenuState.prototype = {
 
 	},
 
-	startGame: function () {
+	startGame: function (playerName) {
 		console.log("== STARTING PLAYSTATE ==");
+		this.gameLogic.playState.playerName = playerName;
 		this.game.state.start("playState");
 	}
 };

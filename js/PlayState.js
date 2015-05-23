@@ -13,6 +13,7 @@ PlayState.prototype = {
 		this.playField = this.game.add.group(this.game.world, "playField");
 		this.player = new Player(this, this.playField);
 		this.UI = new UI(this);
+		this.UI.setName(this.playerName);
 		this.addLevel();
 		this.setCurrentLevel(0, true);
 	    this.game.input.onDown.add(function (self, pointer) {

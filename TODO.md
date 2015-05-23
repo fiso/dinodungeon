@@ -13,6 +13,9 @@ TODO
 [X] Fog of war
 [X] Enemies
 [X] Combat
+[X] Add dinosaur sprites
+[ ] New player sprite
+[ ] Handle game over
 [ ] Leveling up
 [ ] Character sheet
     [ ] Basic Stats
