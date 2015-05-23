@@ -1,6 +1,7 @@
-function Level (game, container, width, height) {
+function Level (game, container, width, height, depth) {
 	this.gameLogic = game;
 	this.game = game.game;
+	this.depth = depth;
 	this.width = width;
 	this.height = height;
 	this.outerContainer = container;
@@ -175,6 +176,10 @@ Level.prototype.makeCurrent = function (goingDown) {
 	this.updateFogOfWar();
 };
 
+Level.prototype.destroy = function () {
+	console.log("DESTROY LVL");
+};
+
 Level.prototype.updateFogOfWar = function () {
 	for (var i = 0; i < this.container.children.length; i++) {
 		var sprite = this.container.children[i];
@@ -222,7 +227,7 @@ Level.prototype.killEnemy = function (deadEnemy) {
 		debugger;
 	}
 
-	enemy.sprite.destroy();
+	enemy.destroy();
 	this.enemies.splice(myIndex, 1);
 };
 
@@ -328,6 +333,10 @@ Level.prototype.getRandomWalkableTile = function () {
 };
 
 Level.prototype.squareWalkable = function (x, y) {
+	if (x < 0 || y < 0 || x > this.width -1 || y > this.height - 1) {
+		return false;
+	}
+
 	if (this.gameLogic.player.mapPosition.x === x && this.gameLogic.player.mapPosition.y === y) {
 		return false;
 	}
@@ -382,7 +391,7 @@ Level.prototype.generate = function (width, height) {
 	this.enemies = [];
 	for (i = 0; i < 5; i++) {
 		var position = this.getRandomWalkableTile();
-		var enemy = Enemy.create(this.gameLogic, this.outerContainer, position);
+		var enemy = Enemy.create(this.gameLogic, this.outerContainer, position, this.depth);
 		enemy.sprite.isEnemy = true;
 		this.enemies.push(enemy);
 	}
@@ -477,8 +486,8 @@ Level.prototype.generatePath = function (startX, startY, dirX, dirY, iLength) {
 
 define(function () {
 	return {
-		create: function (game, container, width, height) {
-			return new Level(game, container, width, height);
+		create: function (game, container, width, height, depth) {
+			return new Level(game, container, width, height, depth);
 		}
 	}
 });

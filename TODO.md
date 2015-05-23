@@ -14,9 +14,9 @@ TODO
 [X] Enemies
 [X] Combat
 [X] Add dinosaur sprites
-[ ] New player sprite
-[ ] Handle game over
-[ ] Leveling up
+[X] New player sprite
+[X] Leveling up
+[X] Handle game over
 [ ] Character sheet
     [ ] Basic Stats
     [ ] Pick up items
@@ -26,7 +26,7 @@ TODO
 [ ] Instantiate map rendering
 [ ] Improve map generation
 [ ] Background graphics (behind map)
-[ ] Main menu
+[X] Main menu
 [ ] Intro scroller
 
 

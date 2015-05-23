@@ -1,4 +1,5 @@
 function PlayState(game, container) {
+	this.gameLogic = game;
 	this.levels = [];
 	this.currentLevelIndex = -1;
 	this.cameraOffset = {
@@ -22,6 +23,12 @@ PlayState.prototype = {
 		    	this.capturedPointer = pointer;
 	    	}
 	    }, this);
+
+	    this.dinoRoar = this.game.add.audio("dinoroar");
+
+	    if (this.gameLogic.isDevelopment) {
+		    this.dinoRoar.volume = 0;
+		}
 	},
 
 	render: function () {
@@ -69,6 +76,13 @@ PlayState.prototype = {
 		this.cameraOffset.y += moveVector.y;
 	},
 
+	shutdown: function () {
+		for (var i = 0; i < this.levels.length; i++) {
+			this.levels[i].destroy();
+		}
+		this.levels = [];
+	},
+
 	newTurn: function () {
 		this.turnNumber++;
 		console.log("== Turn " + this.turnNumber + " starting ==");
@@ -77,7 +91,7 @@ PlayState.prototype = {
 	},
 
 	addLevel: function () {
-		var level = new Level(this, this.playField, 20, 20);		// TODO: Tweak level sizes, and make larger and larger levels as you venture further down
+		var level = new Level(this, this.playField, 20, 20, this.levels.length + 1);		// TODO: Tweak level sizes, and make larger and larger levels as you venture further down
 		this.levels.push(level);
 	},
 
@@ -90,6 +104,7 @@ PlayState.prototype = {
 		this.currentLevelIndex = index;
 		level.makeCurrent(goingDown);
 		this.UI.setDepth(index + 1);
+		this.player.moveDestination = null;
 	},
 
 	centerCameraOnMapPosition: function (mapPosition) {
@@ -124,6 +139,26 @@ PlayState.prototype = {
 			}
 			this.setCurrentLevel(this.currentLevelIndex + 1, true);
 		}
+	},
+
+	submitScore: function () {
+		this.post("http://upr-jstenninge1.dice.ad.ea.com:3000/api/score", {dinokey: "a718d380-00b9-11e5-ba75-dd20de7eed80", username: this.playerName, score: this.UI.score});
+	},
+
+	post: function (url, params) {
+		$.ajax({
+		    type: 'POST',
+		    url: url,
+		    crossDomain: true,
+		    data: params,
+		    dataType: 'json',
+		    success: function(responseData, textStatus, jqXHR) {
+		        console.log("RESPONSE:", responseData);
+		    },
+		    error: function (responseData, textStatus, errorThrown) {
+		        console.log("POST FAILED");
+		    }
+		});		
 	}
 };
 

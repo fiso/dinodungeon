@@ -1,11 +1,13 @@
 function MenuState(game) {
 	this.gameLogic = game;
-	this.game = game.game;
 }
 
 MenuState.prototype = {
 	create: function () {
-		this.startGame("fiso");	// Dev override
+		if (this.gameLogic.isDevelopment) {
+			this.startGame("fsoderholm");	// Dev override
+			return;
+		}
 
 		this.logo = this.game.add.text(0, 0, "DINO DUNGEON", {
 	        font: "200px Play",
@@ -22,8 +24,6 @@ MenuState.prototype = {
 	    this.logo.alpha = 0;
 	    var tween = this.game.add.tween(this.logo).to({alpha: 1}, 2500, Phaser.Easing.Quadratic.InOut, true);
 		tween.onComplete.add(function () {
-			console.log("FADE COMPLETE");
-
 			this.blinkText = this.game.add.text(0, 0, "CLICK ANYWHERE TO START", {
 				font: "50px Play",
 				fill: "#ffffff",
@@ -41,8 +41,15 @@ MenuState.prototype = {
 
 	    this.game.input.onDown.add(function (self, pointer) {
 	    	var playerName = prompt("Please enter your name. Use a valid Dinolog username to get highscore tracking, or just pick a cool viking name for flavor points!");
-	    	this.startGame(playerName);
+	    	if (playerName) {
+	    		this.startGame(playerName);
+	    	}
 	    }, this);
+	    if (!this.gameLogic.isDevelopment && !this.music) {
+	    	console.log("START MUSIC");
+		    this.music = this.game.add.audio("bgmusic");
+	    	this.music.play();
+	    }
 	},
 
 	update: function () {

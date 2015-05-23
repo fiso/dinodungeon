@@ -20,8 +20,11 @@ function Player(game, container) {
 	this.mana = 10;
 	this.maxMana = 10;
 	this.level = 1;
+	this.xp = 0;
+	this.maxXP = 100;
 	this.equipSlots = [null, null, null, null];
 	this.inventory = [];
+	this.restedValue = 0;
 	for (var i = 0; i < 7 * 3; i++) {
 		this.inventory.push(null);
 	}
@@ -71,11 +74,18 @@ Player.prototype.takeAction = function (action, actionData) {
 	console.log("Player action taken: " + action);
 	switch (action) {
 		case this.actions.MOVE_TO_POSITION:
+			this.restedValue = 0;
 			this.animateToMapPosition(actionData.x, actionData.y);
 			break;
 		case this.actions.WAIT:
+			this.restedValue += 0.25;
+			if (this.restedValue >= 1) {
+				this.restedValue -= 1;
+				this.heal(1);
+			}
 			break;
 		case this.actions.ATTACK:
+			this.restedValue = 0;
 			this.attackEnemy(actionData.enemy);
 			break;
 		default:
@@ -173,13 +183,21 @@ Player.prototype.getArmor = function () {
 };
 
 Player.prototype.takeDamage = function (amount) {
+	this.restedValue = 0;
 	amount = Math.max(1, amount - this.getArmor());
 	this.gameLogic.currentLevel.showDamage(this.sprite, amount);
 	this.health -= amount;
 	this.gameLogic.UI.setHP(this.health, this.maxHealth);
 	if (this.health < 1) {
-		console.log("GAME OVER! TODO: Show UI for game over");
+		this.gameLogic.UI.showGameOver();
+		this.gameLogic.submitScore();
 	}
+};
+
+Player.prototype.heal = function (amount) {
+	this.health = Math.min(this.maxHealth, this.health + 1);
+	this.gameLogic.UI.setHP(this.health, this.maxHealth);
+	this.gameLogic.currentLevel.showHealing(this.sprite, amount); 
 };
 
 Player.prototype.attackEnemy = function (enemy) {
@@ -191,6 +209,35 @@ Player.prototype.attackEnemy = function (enemy) {
 	}
 	enemy.takeDamage(damageDealt);
 };
+
+Player.prototype.levelUp = function (xp) {
+	this.level++;
+	this.xp -= this.maxXP;
+	this.maxXP *= 2;	// ¯\_(ツ)_/¯
+	this.maxHealth += 1;
+	this.str += 2;
+	this.dex += 1;
+
+	this.gameLogic.UI.setLevel(this.level);
+	this.gameLogic.UI.setHP(this.health, this.maxHealth);
+	this.gameLogic.UI.addScore(500);
+	this.gameLogic.UI.updateStatTexts();
+};
+
+Player.prototype.addXP = function (xp) {
+	this.xp += xp;
+	if (this.xp >= this.maxXP) {
+		this.levelUp();
+	}
+	this.gameLogic.UI.setXP(this.xp, this.maxXP);
+};
+
+Player.prototype.onDefeatEnemy = function (enemy) {
+	this.heal(1); // Because why not
+	this.addXP(enemy.xpValue)
+	this.gameLogic.UI.addScore(enemy.pointValue);
+};
+
 
 define(function () {
 	return {

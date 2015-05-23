@@ -1,6 +1,5 @@
 function PreloadState(game) {
 	this.gameLogic = game;
-	this.game = game.game;
 }
 
 PreloadState.prototype = {
@@ -14,6 +13,10 @@ PreloadState.prototype = {
 		this.game.load.image("mana-box", "img/mana-box.png");
 		this.game.load.image("xp-bar", "img/xp-bar.png");
 		this.game.load.image("xp-bar-bg", "img/xp-bar-bg.png");
+		this.game.load.image("character-screen", "img/character-screen.png");
+
+		this.game.load.audio("bgmusic", "audio/Ambient-voyager-chillout-music.mp3");
+		this.game.load.audio("dinoroar", "audio/Tyrannosaurus Rex-SoundBible.com-2136096676.mp3");
 	},
 
 	create: function () {

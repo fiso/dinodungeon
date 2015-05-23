@@ -21,6 +21,11 @@ function UI (game, container) {
 	this.avatarFrame.inputEnabled = true;
 	this.avatarFrame.input.useHandCursor = true;
 	this.container.add(this.avatarFrame);
+
+	this.avatarFrame.events.onInputDown.add(function (self, pointer) {
+		this.characterScreen.visible = !this.characterScreen.visible;
+	}.bind(this));
+
 	
 	this.avatar = this.game.add.image(4, -4, "avatar");
 	this.avatar.anchor.y = 1;
@@ -52,8 +57,45 @@ function UI (game, container) {
 	this.manaBoxes = [];
 	this.setMP(10, 10);
 
+	this.characterScreen = this.game.add.image(this.margin, this.game.height - 3 * this.margin - this.xpBarBg.height - this.avatarFrame.height, "character-screen");
+	this.characterScreen.anchor.y = 1;
+	this.characterScreen.visible = false;
+	this.container.add(this.characterScreen);
+
+	var inventoryHeading = this.game.add.text(this.margin, -this.characterScreen.height + this.margin, "INVENTORY", {font: "25px Play", fill: "#FFFFFF", align: "left"});
+	this.characterScreen.addChild(inventoryHeading);
+
+	this.statTexts = {};
+	var y = -this.characterScreen.height + this.margin * 4 + inventoryHeading.height;
+	["str", "int", "vit", "dex", "armor"].forEach(function (statKey) {
+		var value = this.gameLogic.player[statKey];
+		if (statKey === "armor") {
+			value = this.gameLogic.player.getArmor();
+		}
+		var nameText = this.game.add.text(this.margin, y, statKey.toUpperCase(), {font: "25px Play", fill: "#c6c6c6", align: "left"});
+		var valueText = this.game.add.text(150, y, value.toString(), {font: "25px Play", fill: "#ffffff", align: "left"});
+		y += nameText.height + this.margin;
+		this.characterScreen.addChild(nameText);
+		this.characterScreen.addChild(valueText);
+		this.statTexts[statKey] = {
+			name: nameText,
+			value: valueText
+		};
+	}.bind(this));
+
 	this.score = 0;
 }
+
+UI.prototype.updateStatTexts = function () {
+	["str", "int", "vit", "dex", "armor"].forEach(function (statKey) {
+		var value = this.gameLogic.player[statKey];
+		if (statKey === "armor") {
+			value = this.gameLogic.player.getArmor();
+		}
+
+		this.statTexts[statKey].value.setText(value.toString());
+	}.bind(this));
+};
 
 UI.prototype.newTurn = function () {
 
@@ -68,19 +110,21 @@ UI.prototype.addScore = function (amount) {
 	this.scoreText.setText(this.score.toString() + " points");
 };
 
+var BOX_ALPHA_FADED = 0.25;
+
 UI.prototype.setHP = function (hp, maxHp) {
 	while (this.healthBoxes.length < maxHp) {
 		var box = this.game.add.image(this.avatarFrame.width + 2 * this.margin + this.healthBoxes.length * (28 + 3), this.game.height - this.margin * 2 - this.xpBarBg.height, "health-box");
 		box.anchor.y = 1;
 		if (this.healthBoxes.length > hp) {
-			box.alpha = 0.5;
+			box.alpha = BOX_ALPHA_FADED;
 		}
 		this.container.add(box);
 		this.healthBoxes.push(box);
 	}
 
 	for (var i = 0; i < this.healthBoxes.length; i++) {
-		var alpha = 0.5;
+		var alpha = BOX_ALPHA_FADED;
 		if (i <= hp) {
 			alpha = 1;
 		}
@@ -96,14 +140,14 @@ UI.prototype.setMP = function (mp, maxMp) {
 		var box = this.game.add.image(this.avatarFrame.width + 2 * this.margin + this.manaBoxes.length * (28 + 3), this.game.height - this.margin * 3 - this.xpBarBg.height - this.healthBoxes[0].height, "mana-box");
 		box.anchor.y = 1;
 		if (this.manaBoxes.length > mp) {
-			box.alpha = 0.5;
+			box.alpha = BOX_ALPHA_FADED;
 		}
 		this.container.add(box);
 		this.manaBoxes.push(box);
 	}
 
 	for (var i = 0; i < this.manaBoxes.length; i++) {
-		var alpha = 0.5;
+		var alpha = BOX_ALPHA_FADED;
 		if (i <= mp) {
 			alpha = 1;
 		}
@@ -131,6 +175,7 @@ UI.prototype.setLevel = function (level) {
         align: "center"
     };
 
+    this.avatarFrame.bringToTop();
     var text = this.game.add.text(this.levelText.x, this.levelText.y - 40, "LEVEL UP!", style);
     this.avatarFrame.addChild(text);
 
@@ -153,6 +198,56 @@ UI.prototype.setDepth = function (depth) {
 
 UI.prototype.setName = function (name) {
 	this.nameText.setText(name);
+};
+
+UI.prototype.showGameOver = function (name) {
+	var animationTime = 2000;
+
+	this.screenFader = this.game.add.graphics(0, 0);
+	this.screenFader.beginFill(0x110000, 1);
+	this.screenFader.drawRect(0, 0, this.game.width, this.game.height);
+	this.screenFader.endFill();
+	this.container.add(this.screenFader);
+	this.screenFader.alpha = 0;
+	this.game.add.tween(this.screenFader).to({
+		alpha: 0.9
+	}, animationTime, Phaser.Easing.Quadratic.InOut, true);
+
+	this.gameoverText = this.game.add.text(0, 0, "GAME OVER", {
+	        font: "200px Play",
+	        fill: "#000000",
+	        stroke: "#ffffff",
+	        strokeThickness: 10,
+	        align: "center"
+	    });
+
+    this.gameoverText.anchor.x = 0.5;
+    this.gameoverText.anchor.y = 0.5;
+    this.gameoverText.x = this.game.width / 2;
+    this.gameoverText.y = this.game.height / 2 - 100;
+    this.gameoverText.alpha = 0;
+	this.container.add(this.gameoverText);
+    var tween = this.game.add.tween(this.gameoverText).to({alpha: 1}, animationTime, Phaser.Easing.Quadratic.InOut, true);
+	tween.onComplete.add(function () {
+		this.blinkText = this.game.add.text(0, 0, "CLICK ANYWHERE TO QUIT", {
+			font: "50px Play",
+			fill: "#ffffff",
+			align: "center"
+		});
+		this.blinkText.anchor.x = 0.5;
+		this.blinkText.anchor.y = 0.5;
+		this.blinkText.x = this.game.width / 2;
+		this.blinkText.y = this.game.height / 2 + 100;
+		this.container.add(this.blinkText);
+
+	    this.game.input.onDown.add(function (self, pointer) {
+	    	this.game.state.start("menuState");
+	    }, this);
+
+		var timer = this.game.time.events.loop(1000, function() {
+			this.blinkText.alpha = this.blinkText.alpha ? 0 : 1;
+		}, this);
+	}, this);
 };
 
 define(function () {

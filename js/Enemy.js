@@ -1,4 +1,4 @@
-function Enemy(game, container, position) {
+function Enemy(game, container, position, depth) {
 	this.gameLogic = game;
 	this.game = game.game;
 	this.sprite = this.game.add.sprite(0, 0, 'enemy_sprite');
@@ -10,14 +10,17 @@ function Enemy(game, container, position) {
 	this.sprite.scale.x = 0.5;
 	this.sprite.scale.y = 0.5;
 	this.sprite.enemy = this;
+	this.depth = depth;
 
 	this.name = "Enemy";
-	this.str = 10;
+	this.str = 10 + (depth - 1) * 2;
 	this.int = 10;
 	this.vit = 10;
-	this.dex = 10;
+	this.dex = 10 + Math.floor(0.5 * depth);
 
 	this.health = 5;
+	this.xpValue = 50;
+	this.pointValue = 100;
 
 	this.lastPlayerPosition = null;
 	this.setMapPosition(position.x, position.y);
@@ -94,12 +97,20 @@ Enemy.prototype.attackPlayer = function () {
 	this.gameLogic.player.takeDamage(damageDealt);
 };
 
+Enemy.prototype.destroy = function () {
+	this.sprite.inputEnabled = false;
+	var tween = this.game.add.tween(this.sprite).to({alpha: 0}, 500, Phaser.Easing.Linear.None, true);
+	tween.onComplete.add(function () {
+		this.sprite.destroy();
+	}, this);
+};
+
 Enemy.prototype.takeDamage = function (amount) {
 	this.health -= amount;
 	this.gameLogic.currentLevel.showDamage(this.sprite, amount);
 	if (this.health < 1) {
 		console.log("Enemy killed!");
-		this.gameLogic.UI.addScore(100);
+		this.gameLogic.player.onDefeatEnemy(this);
 		this.gameLogic.currentLevel.killEnemy(this);
 	}
 };
@@ -110,6 +121,9 @@ Enemy.prototype.newTurn = function () {
 	var moveToPos = null;
 
 	if (playerVisible) {
+		if (!this.lastPlayerPosition) {
+			this.gameLogic.dinoRoar.play();
+		}
 		this.lastPlayerPosition = {
 			x: this.gameLogic.player.mapPosition.x,
 			y: this.gameLogic.player.mapPosition.y
@@ -151,8 +165,8 @@ Enemy.prototype.newTurn = function () {
 
 define(function () {
 	return {
-		create: function (game, container, position) {
-			return new Enemy(game, container, position);
+		create: function (game, container, position, depth) {
+			return new Enemy(game, container, position, depth);
 		}
 	}
 });
