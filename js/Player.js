@@ -36,8 +36,6 @@ function Player(game, container) {
 	};
 
 	this.game.input.keyboard.onDownCallback = this.onKeypress.bind(this);
-
-	return this;
 }
 
 Player.prototype.getScreenCoordinates = function (mapX, mapY) {

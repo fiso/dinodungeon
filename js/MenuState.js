@@ -1,153 +1,68 @@
-define(
-	['Player', 'Level', 'Enemy', 'UI'],
-	function (Player, Level, Enemy, UI) {
-		return {
-			game: null,
-			player: null,
-			levels: [],
-			currentLevelIndex: -1,
-			cameraOffset: {
-				x: 0,
-				y: 0
-			},
-			turnNumber: 0,
+function MenuState(game) {
+	this.gameLogic = game;
+	this.game = game.game;
+}
 
-			start: function () {
-				this.game = new Phaser.Game(1920, 1080, Phaser.AUTO, 'dinodungeon', {
-					preload: this.preload.bind(this),
-					create: this.create.bind(this),
-					render: this.render.bind(this),
-					update: this.update.bind(this)
-				});
-			},
+MenuState.prototype = {
+	create: function () {
+		this.startGame("Jace Beleren");	// Dev override
 
-			preload: function () {
-				this.game.load.spritesheet('hero_sprite', 'img/hero.png', 64, 64);
-				this.game.load.spritesheet('map_tiles', 'img/dungeon_tiles_compact_and_varied.png', 16, 16);
-			},
+		this.logo = this.game.add.text(0, 0, "DINO DUNGEON", {
+	        font: "200px Play",
+	        fill: "#000000",
+	        stroke: "#ffffff",
+	        strokeThickness: 10,
+	        align: "center"
+	    });
 
-			create: function () {
-				this.game.stage.disableVisibilityChange = true;
-				this.game.time.advancedTiming = true;
-				this.game.world.setBounds(-10000, -10000, 20000, 20000);
-				this.playField = this.game.add.group(this.game.world, "playField");
-				this.player = Player.create(this, this.playField);
-				this.UI = UI.create(this);
-				this.addLevel();
-				this.setCurrentLevel(0, true);
-				this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-				this.game.scale.setShowAll();
-				this.game.scale.refresh();
-				this.game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
-			    this.game.input.onDown.add(function (self, pointer) {
-			    	if (pointer.button === Phaser.Mouse.RIGHT_BUTTON) {
-				    	this.capturedRightclick = true;
-				    	this.capturedPointer = pointer;
-			    	}
-			    }, this);
-			},
+	    this.logo.anchor.x = 0.5;
+	    this.logo.anchor.y = 0.5;
+	    this.logo.x = this.game.width / 2;
+	    this.logo.y = this.game.height / 2 - 100;
+	    this.logo.alpha = 0;
+	    var tween = this.game.add.tween(this.logo).to({alpha: 1}, 2500, Phaser.Easing.Quadratic.InOut, true);
+		tween.onComplete.add(function () {
+			console.log("FADE COMPLETE");
 
-			render: function () {
-				// this.game.debug.text(this.game.time.fps || '--', 2, 14, "#00ff00");
-			},
+			this.blinkText = this.game.add.text(0, 0, "CLICK ANYWHERE TO START", {
+				font: "50px Play",
+				fill: "#ffffff",
+				align: "center"
+			});
+			this.blinkText.anchor.x = 0.5;
+			this.blinkText.anchor.y = 0.5;
+			this.blinkText.x = this.game.width / 2;
+			this.blinkText.y = this.game.height / 2 + 100;
 
-			update: function () {
-				if (this.capturedRightclick) {
-			    	this.capturedRightclick = false;
-			    	var mapPosition = this.currentLevel.getMapPosition(this.capturedPointer);
-			    	if (this.currentLevel.squareWalkable(mapPosition.x, mapPosition.y) &&
-			    		this.currentLevel.squareDiscovered(mapPosition.x, mapPosition.y)) {
-				    	this.player.setMoveDestination(mapPosition);
-			    	}
-				}
+			var timer = this.game.time.events.loop(1000, function() {
+				this.blinkText.alpha = this.blinkText.alpha ? 0 : 1;
+			}, this);
+		}, this);
 
-				this.player.update();
-				this.centerCameraOnMapPixelPosition({
-					x: this.player.sprite.position.x + this.cameraOffset.x,
-					y: this.player.sprite.position.y + this.cameraOffset.y
-				});
+	    this.game.input.onDown.add(function (self, pointer) {
+	    	var playerName = prompt("Please enter your name. Use a valid Dinolog username to get highscore tracking, or just pick a cool viking name for flavor points!");
+	    	this.startGame(playerName);
+	    }, this);
+	},
 
-				var velocity = 5;
-				var moveVector = new Phaser.Point(0, 0);
-				if (this.game.input.keyboard.isDown(Phaser.Keyboard.UP)) {
-					moveVector.y -= velocity;
-				}
-				if (this.game.input.keyboard.isDown(Phaser.Keyboard.DOWN)) {
-					moveVector.y += velocity;
-				}
-				if (this.game.input.keyboard.isDown(Phaser.Keyboard.LEFT)) {
-					moveVector.x -= velocity;
-				}
-				if (this.game.input.keyboard.isDown(Phaser.Keyboard.RIGHT)) {
-					moveVector.x += velocity;
-				}
-				if (this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR)) {
-					this.cameraOffset.x = 0;
-					this.cameraOffset.y = 0;
-				}
+	update: function () {
 
-				moveVector.normalize();
-				moveVector.multiply(velocity, velocity);
-				this.cameraOffset.x += moveVector.x;
-				this.cameraOffset.y += moveVector.y;
-			},
+	},
 
-			newTurn: function () {
-				this.turnNumber++;
-				console.log("== Turn " + this.turnNumber + " starting ==");
+	render: function () {
 
-				this.currentLevel.newTurn();
-			},
+	},
 
-			addLevel: function () {
-				var level = Level.create(this, this.playField, 20, 20);		// TODO: Tweak level sizes, and make larger and larger levels as you venture further down
-				this.levels.push(level);
-			},
-
-			setCurrentLevel: function (index, goingDown) {
-				if (this.currentLevel) {
-					this.currentLevel.hide();
-				}
-				var level = this.levels[index];
-				this.currentLevel = level;
-				this.currentLevelIndex = index;
-				level.makeCurrent(goingDown);
-				this.UI.setDepth(index + 1);
-			},
-
-			centerCameraOnMapPosition: function (mapPosition) {
-				var level = this.levels[this.currentLevelIndex];
-				var p = level.getPixelPosition(mapPosition.x, mapPosition.y);
-				game.game.world.camera.x = -(game.game.width / 2 - (p.x + level.getTileSize() / 2) * level.container.scale.x);
-				game.game.world.camera.y = -(game.game.height / 2 - (p.y + level.getTileSize() / 2) * level.container.scale.y);
-			},
-
-			centerCameraOnMapPixelPosition: function (mapPosition) {
-				var level = this.levels[this.currentLevelIndex];
-				game.game.world.camera.x = -(game.game.width / 2 - (mapPosition.x + level.getTileSize() / 2) * level.container.scale.x);
-				game.game.world.camera.y = -(game.game.height / 2 - (mapPosition.y + level.getTileSize() / 2) * level.container.scale.y);
-			},
-
-			onPlayerStepComplete: function () {
-				this.currentLevel.updateFogOfWar();
-
-				// Check if we stepped on anything interesting
-
-				var level = this.currentLevel;
-				if (this.player.mapPosition.x === level.entrancePosition.x && this.player.mapPosition.y === level.entrancePosition.y) {
-					if (this.currentLevelIndex > 0) {
-						this.setCurrentLevel(this.currentLevelIndex - 1, false);
-					}
-				}
-				if (this.player.mapPosition.x === level.exitPosition.x && this.player.mapPosition.y === level.exitPosition.y) {
-					if (this.currentLevelIndex === this.levels.length - 1) {
-						// New level reached, award score!
-						this.UI.addScore(1000);
-						this.addLevel();
-					}
-					this.setCurrentLevel(this.currentLevelIndex + 1, true);
-				}
-			}
-		};
+	startGame: function () {
+		console.log("== STARTING PLAYSTATE ==");
+		this.game.state.start("playState");
 	}
-);
+};
+
+define(function () {
+	return {
+		create: function (game) {
+			return new MenuState(game);
+		}
+	}
+});
